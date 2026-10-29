@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" role="img" aria-label="Glowing chaotic machine core">
+  <defs>
+    <radialGradient id="core" cx="50%" cy="45%"><stop stop-color="#fff"/><stop offset=".2" stop-color="#d49cff"/><stop offset=".55" stop-color="#7c34dc"/><stop offset="1" stop-color="#160b32"/></radialGradient>
+    <linearGradient id="metal" x1="0" x2="1"><stop stop-color="#392348"/><stop offset=".45" stop-color="#d17b4f"/><stop offset=".7" stop-color="#6f3a36"/><stop offset="1" stop-color="#21152e"/></linearGradient>
+    <linearGradient id="beam"><stop stop-color="#d8b9ff" stop-opacity="0"/><stop offset=".5" stop-color="#d8b9ff"/><stop offset="1" stop-color="#7f3cff" stop-opacity="0"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="8" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="18"/></filter>
+  </defs>
+  <ellipse cx="360" cy="457" rx="265" ry="28" fill="#7d42db" opacity=".32" filter="url(#soft)"/>
+  <path d="M70 178 L303 252" stroke="url(#beam)" stroke-width="15" filter="url(#glow)"/>
+  <path d="M417 222 L654 143" stroke="url(#beam)" stroke-width="11" filter="url(#glow)"/>
+  <g stroke="#a862d7" stroke-width="8" fill="none" opacity=".8"><path d="M130 390 C80 330 120 275 171 286 C209 294 203 354 242 367"/><path d="M488 353 C531 325 498 269 546 254 C589 241 606 285 590 322"/></g>
+  <g fill="url(#metal)" stroke="#dd975e" stroke-width="5"><rect x="125" y="350" width="150" height="92" rx="24"/><rect x="450" y="333" width="151" height="109" rx="24"/><rect x="273" y="90" width="116" height="120" rx="24"/></g>
+  <g fill="none" stroke="#f0bd76" stroke-width="8"><circle cx="199" cy="394" r="42"/><circle cx="523" cy="387" r="40"/><circle cx="331" cy="117" r="31"/></g>
+  <g fill="#e6a457" stroke="#4b273e" stroke-width="6"><path d="M183 352 l15 23 28-3-16 23 12 26-27-11-22 16 4-28-22-17 28-2z"/><path d="M512 350 l15 21 25-4-14 23 13 24-26-9-22 14 4-27-21-17 27-3z"/></g>
+  <path d="M245 390 H475" stroke="#e5a062" stroke-width="21" stroke-linecap="round" opacity=".75"/>
+  <circle cx="360" cy="283" r="142" fill="#1a102c" stroke="#d07af3" stroke-width="13" filter="url(#glow)"/>
+  <circle cx="360" cy="283" r="106" fill="url(#core)" stroke="#f0b8ff" stroke-width="5"/>
+  <circle cx="360" cy="283" r="60" fill="none" stroke="#fff" stroke-opacity=".65" stroke-width="4"/><circle cx="360" cy="283" r="27" fill="#fff" opacity=".9" filter="url(#glow)"/>
+  <g fill="none" stroke="#c97cff" stroke-width="8" opacity=".9"><path d="M292 158 C314 125 389 118 425 153"/><path d="M274 414 C323 443 395 446 444 406"/></g>
+  <g fill="#72ddff" stroke="#a6f0ff" stroke-width="3"><rect x="411" y="132" width="44" height="125" rx="20"/><rect x="467" y="184" width="34" height="95" rx="16"/></g>
+  <path d="M433 150v88M484 198v67" stroke="#fff" stroke-width="5" opacity=".8"/>
+</svg>
