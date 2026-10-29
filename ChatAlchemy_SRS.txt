@@ -1,0 +1,668 @@
+CHAT ALCHEMY SOFTWARE REQUIREMENTS SPECIFICATION (SRS)
+
+Version: 1.0 Date: October 30, 2026 Project: Codex x TwitchCon Hackathon Status: MVP Specification
+
+============================================================
+
+INTRODUCTION
+
+1.1 Purpose
+
+This document specifies the functional and non-functional requirements for ChatAlchemy, a real-time, community-driven machine-building experience for Twitch streams.
+
+It serves as the primary reference for developers, testers, designers, and OpenAI Codex during implementation.
+
+1.2 Product Vision
+
+ChatAlchemy transforms Twitch chat into a collaborative machine-building game. Viewers contribute virtual components through chat commands. The system assembles components according to predefined rules, and a live overlay visualizes the evolving machine.
+
+AI generates a machine name, narrative description, and final challenge for the streamer.
+
+The experience culminates in a challenge determined by the machine constructed by the community.
+
+1.3 Objectives
+
+Enable viewers to influence a shared machine in real time.
+Make community contributions visually engaging.
+Use deterministic rules to create coherent machine combinations.
+Use AI to generate entertaining, context-aware descriptions and challenges.
+Give streamers control over build sessions and special events.
+Deliver a stable, demonstrable MVP within the hackathon deadline.
+
+1.4 Definitions
+
+Component: A virtual machine part contributed by a viewer or streamer.
+
+Machine State: The authoritative representation of the current machine, its components, and combinations.
+
+Assembly Engine: The rule-based system that determines how components connect and interact.
+
+Overlay: The browser-rendered visual experience displayed on the Twitch stream through OBS.
+
+Combo: A predefined interaction between two or more compatible components.
+
+Build Session: A period during which viewers can contribute components.
+
+Challenge: A task generated from the final machine configuration for the streamer.
+
+Demo Mode: A local simulation that demonstrates the product without requiring live Twitch chat.
+
+============================================================
+
+PROJECT SCOPE
+
+2.1 In Scope for the MVP
+
+Twitch chat integration.
+A predefined catalog of 8–12 components.
+Command validation, cooldowns, and contribution limits.
+A shared machine state maintained by the backend.
+Rule-based component placement and combinations.
+Real-time overlay updates and animations.
+AI-generated machine names, descriptions, and challenges.
+Streamer controls to start, pause, finish, and reset a session.
+Streamer-triggered events.
+Local demo mode.
+Setup documentation, environment configuration, and automated tests.
+
+2.2 Out of Scope for the MVP
+
+Full physics simulation.
+Arbitrary user-created components.
+Procedurally generated 3D models.
+Twitch Extension marketplace distribution or review.
+Multi-channel machine synchronization.
+Viewer accounts and persistent progression.
+Inventory trading or monetization.
+AI-controlled assembly rules.
+Automated control of the streamer's game or computer.
+Mandatory AI generation for every chat message.
+
+============================================================
+
+USER ROLES
+
+3.1 Viewer
+
+Submits valid component commands.
+Participates in community construction.
+Watches machine changes and combinations.
+Receives feedback when contributions are accepted or rejected.
+
+3.2 Streamer / Moderator
+
+Starts, pauses, resumes, and ends build sessions.
+Triggers special events.
+Reveals the final challenge.
+Resets the machine.
+Controls privileged functionality.
+
+3.3 System
+
+Validates incoming commands.
+Updates machine state.
+Applies assembly rules.
+Broadcasts state changes.
+Coordinates AI generation.
+Enforces security and rate limits.
+
+============================================================
+
+FUNCTIONAL REQUIREMENTS
+
+4.1 Twitch Integration
+
+FR-001: The system shall connect to a Twitch channel using an authorized chat integration.
+
+FR-002: The system shall receive and parse supported chat commands.
+
+FR-003: The system shall identify the sender and source of each command.
+
+FR-004: Unsupported commands shall not modify machine state.
+
+FR-005: The system shall handle connection loss and attempt reconnection where appropriate.
+
+FR-006: The system shall provide a local demo mode that simulates incoming chat commands.
+
+FR-007: The system may react to Twitch EventSub events, such as subscriptions or raids, to trigger special events.
+
+4.2 Component Management
+
+FR-010: The system shall maintain a predefined component catalog containing IDs, names, types, visual assets, and effects.
+
+FR-011: The system shall recognize supported commands, including:
+
+!gear !laser !portal !battery !duck !blackhole !spring !fan !magnet !prism
+
+FR-012: Each accepted command shall add the corresponding component to the active machine.
+
+FR-013: The system shall associate each contribution with its source and timestamp.
+
+FR-014: The system shall reject contributions when the session is paused, finished, or otherwise not accepting components.
+
+FR-015: The system shall enforce configurable per-user cooldowns and machine capacity limits.
+
+FR-016: The system should provide clear feedback for accepted and rejected contributions where feasible.
+
+FR-017: The streamer shall be able to introduce a component through a control action or special event.
+
+4.3 Machine Assembly Engine
+
+FR-020: The system shall maintain one authoritative machine state for each active session.
+
+FR-021: The assembly engine shall validate component compatibility using deterministic rules.
+
+FR-022: The system shall place components using predefined positions, connection points, or layout templates.
+
+FR-023: The system shall detect predefined combinations when their conditions are met.
+
+FR-024: The system shall update machine properties and visual effects when a combination activates.
+
+FR-025: The system shall produce reproducible logical outcomes for the same initial state and ordered inputs, including controlled random seeds where randomness is used.
+
+FR-026: The system shall prevent invalid or duplicate state mutations caused by repeated processing of the same event.
+
+FR-027: The system shall track component count, active combinations, and relevant challenge properties.
+
+FR-028: The system shall enforce a configurable maximum number of components per machine.
+
+4.4 Example Assembly Rules
+
+Rule 1: Battery + Gear = Activate mechanical power.
+
+Rule 2: Battery + Laser = Enable the laser.
+
+Rule 3: Laser + Portal = Activate the portal laser combination.
+
+Rule 4: Portal + Black Hole = Trigger an anomaly effect.
+
+Rule 5: Gear + Spring = Activate a launch mechanism.
+
+Rule 6: Laser + Prism = Activate a split-beam effect.
+
+Rule 7: Laser + Portal + Duck = Activate the unstable duck cannon combination.
+
+These rules are examples for the MVP. Arbitrary component permutations are not required.
+
+4.5 Build Session Management
+
+FR-030: The streamer shall be able to start a build session.
+
+FR-031: The streamer shall be able to pause and resume contributions.
+
+FR-032: The system shall support a configurable build duration.
+
+FR-033: The system shall automatically close contributions when the build timer expires.
+
+FR-034: The streamer shall be able to end a session manually.
+
+FR-035: The streamer shall be able to reset the machine and begin a new session.
+
+FR-036: The system shall display session status and remaining build time.
+
+FR-037: The system shall preserve the final machine configuration while generating and displaying the challenge.
+
+4.6 Live Overlay
+
+FR-040: The overlay shall display the current machine and its components.
+
+FR-041: The overlay shall animate accepted component additions.
+
+FR-042: The overlay shall visually indicate activated combinations and special events.
+
+FR-043: The overlay shall display the build timer, contribution count, and session status.
+
+FR-044: The overlay shall display the generated machine name and description.
+
+FR-045: The overlay shall reveal the final streamer challenge.
+
+FR-046: The overlay shall recover from a lost connection by obtaining the latest machine state.
+
+FR-047: The overlay shall work as a browser source in OBS.
+
+FR-048: The overlay should remain legible against different stream backgrounds.
+
+4.7 AI Generation
+
+FR-050: The system shall generate a machine name based on its final components and combinations.
+
+FR-051: The system shall generate an entertaining description consistent with the final configuration.
+
+FR-052: The system shall generate a streamer challenge based on predefined machine properties.
+
+FR-053: The AI shall receive structured machine data rather than unrestricted raw chat history.
+
+FR-054: The system shall validate AI output against a predefined response schema.
+
+FR-055: The system shall use a deterministic fallback generator when AI is unavailable or returns invalid output.
+
+FR-056: The system shall limit AI calls to meaningful events, such as the end of a build session.
+
+FR-057: AI output shall not be allowed to change authoritative assembly rules or execute arbitrary actions.
+
+4.8 AI Output Requirements
+
+The generated result should contain:
+
+machineName: A short, memorable machine name.
+description: A concise explanation of how the machine works.
+personality: An optional humorous characterization.
+challengeTitle: A short challenge name.
+challengeInstructions: Actionable instructions for the streamer.
+difficulty: One of easy, medium, or hard.
+challengeType: One of the supported challenge categories.
+
+Challenges must be selected from or constrained by approved challenge templates. The system must not assume that arbitrary AI-generated tasks are safe or technically possible.
+
+4.9 Streamer Controls and Special Events
+
+FR-060: The system shall provide controls to start, pause, resume, finish, and reset a build session.
+
+FR-061: The system shall allow the streamer to trigger a predefined special event.
+
+FR-062: Special events shall produce a visible overlay response.
+
+FR-063: Only authorized users shall execute privileged controls.
+
+FR-064: The streamer shall be able to trigger the final challenge reveal.
+
+FR-065: The system should support a cooldown or one-event-at-a-time rule for special events.
+
+4.10 Challenge Resolution
+
+FR-070: The system shall derive challenge properties from the final machine configuration.
+
+FR-071: The system shall display the challenge title, instructions, and difficulty.
+
+FR-072: The streamer should be able to acknowledge the challenge and reset the session.
+
+FR-073: The system may allow the streamer to mark a challenge as completed or failed.
+
+Automated verification of challenge completion is not required for the MVP.
+
+============================================================
+
+NON-FUNCTIONAL REQUIREMENTS
+
+NFR-001: Responsiveness
+
+Accepted chat commands should update the overlay within one second at the 95th percentile under normal demo conditions.
+
+NFR-002: Overlay Performance
+
+The overlay should target 30–60 FPS on a typical modern streaming computer for the defined component count.
+
+NFR-003: AI Latency
+
+AI generation shall have a configurable timeout and shall never block chat processing.
+
+NFR-004: Reliability
+
+AI failures shall not prevent machine construction or challenge generation through fallback logic.
+
+NFR-005: Security
+
+API keys, client secrets, and privileged tokens shall never be exposed in frontend code or committed to source control.
+
+NFR-006: Authorization
+
+Privileged controls shall be restricted to the streamer and explicitly authorized moderators.
+
+NFR-007: Abuse Prevention
+
+The system shall enforce cooldowns, command validation, capacity limits, and server-side rate limiting.
+
+NFR-008: Recoverability
+
+A reconnecting overlay shall recover the current authoritative state without requiring a reset.
+
+NFR-009: Maintainability
+
+Components, rules, challenges, and visual effects shall be defined in modular, configurable structures.
+
+NFR-010: Testability
+
+Assembly rules, session transitions, permissions, and AI fallback behavior shall have automated tests.
+
+NFR-011: Compatibility
+
+The overlay shall work in a current Chromium-based browser and OBS browser source.
+
+NFR-012: Privacy
+
+The MVP should retain only the viewer metadata needed for session operation and debugging.
+
+These performance values are proposed targets and must be verified during testing.
+
+============================================================
+
+SYSTEM ARCHITECTURE
+
+6.1 Logical Components
+
+Twitch Platform
+Chat messages.
+Authorized stream events.
+Twitch Adapter
+Authentication.
+Message parsing.
+Connection management.
+Reconnection.
+Application Backend
+Command validation.
+Session management.
+Permissions.
+Rate limiting.
+Assembly Engine
+Component compatibility.
+Component placement.
+Combination detection.
+Machine state updates.
+AI Service
+Machine naming.
+Description generation.
+Challenge generation.
+Fallback generation.
+Real-Time State Broadcaster
+WebSocket events.
+Initial state snapshots.
+Reconnection support.
+React Overlay
+Machine visualization.
+Component animations.
+Timer.
+Special events.
+Challenge reveal.
+
+6.2 Proposed Technology Stack
+
+Language: TypeScript.
+
+Frontend: React and Vite.
+
+Backend: Node.js.
+
+Twitch Chat: A currently supported Twitch chat integration.
+
+Stream Events: Twitch EventSub where required.
+
+Real-Time Communication: WebSockets.
+
+AI: OpenAI API accessed from the backend.
+
+Visual Rendering: SVG and CSS animations, with optional Canvas.
+
+Testing: Vitest and integration tests.
+
+Deployment: Local development initially, followed by a hosted backend for live demonstrations.
+
+A database is not required for the first working version. In-memory session state is sufficient if restart behavior is documented.
+
+============================================================
+
+DATA REQUIREMENTS
+
+7.1 Component Model
+
+Each component definition should contain:
+
+id
+name
+command
+category
+assetKey
+connectionTypes
+effects
+
+Each runtime component instance should additionally contain:
+
+instanceId
+contributorId
+timestamp
+position or layout information
+
+7.2 Machine State
+
+The machine state should contain:
+
+sessionId
+status
+components
+activeCombos
+buildEndsAt
+machineName
+description
+challenge
+revision
+
+Supported session statuses:
+
+idle
+building
+paused
+finalizing
+revealed
+
+The revision value shall increment whenever authoritative state changes. The overlay should ignore stale updates.
+
+7.3 Challenge Model
+
+Each challenge shall contain:
+
+title
+instructions
+difficulty
+challengeType
+
+Difficulty values:
+
+easy
+medium
+hard
+
+The challenge type must belong to a predefined set of supported categories, such as precision, reaction, creativity, or movement.
+
+============================================================
+
+INTERFACE REQUIREMENTS
+
+8.1 Twitch Chat Commands
+
+!gear Adds a gear if the session accepts contributions.
+
+!laser Adds a laser.
+
+!portal Adds a portal.
+
+!duck Adds a wildcard component.
+
+!machine Displays a short machine status summary, if enabled.
+
+Streamer control commands shall only be accepted from authorized accounts.
+
+A browser-based control panel may provide equivalent controls.
+
+8.2 Backend-to-Overlay Events
+
+The real-time interface shall support the following event types:
+
+state.snapshot Provides the current machine and session state.
+
+component.added Indicates an accepted contribution.
+
+combo.activated Indicates that a combination has been discovered.
+
+session.updated Indicates a status or timer change.
+
+event.triggered Indicates that a special event has activated.
+
+machine.generated Provides the generated machine name and description.
+
+challenge.revealed Provides the final challenge.
+
+The overlay shall obtain a fresh state snapshot after reconnecting.
+
+============================================================
+
+SECURITY AND ERROR HANDLING
+
+SEC-001: Twitch and AI credentials shall be stored in server-side environment variables.
+
+SEC-002: All incoming commands shall be validated before modifying machine state.
+
+SEC-003: Streamer controls shall use an authenticated and authorized path.
+
+SEC-004: AI responses shall be treated as untrusted content and rendered safely.
+
+SEC-005: AI responses shall not execute code, invoke arbitrary tools, or change machine rules.
+
+SEC-006: Rate limits shall protect the backend from command floods and repeated AI requests.
+
+SEC-007: Reconnection logic shall avoid duplicate contributions.
+
+SEC-008: If the AI provider is unavailable, the system shall use template-based names, descriptions, and challenges.
+
+SEC-009: If Twitch is unavailable, demo mode shall remain usable.
+
+SEC-010: Operational errors shall be logged without unnecessarily retaining message contents or sensitive tokens.
+
+============================================================
+
+ACCEPTANCE CRITERIA
+
+AC-001: Twitch Contribution
+
+A valid command adds the correct component and animates it on the overlay.
+
+AC-002: Invalid Command
+
+An unsupported command does not change machine state.
+
+AC-003: Cooldown Enforcement
+
+Repeated commands from the same viewer are limited according to configuration.
+
+AC-004: Assembly Rules
+
+A supported component combination activates the correct predefined effect.
+
+AC-005: Session Controls
+
+Starting, pausing, resuming, finishing, and resetting produce the correct state transitions.
+
+AC-006: Timer Completion
+
+When the build timer expires, new contributions are rejected and finalization begins.
+
+AC-007: AI Generation
+
+The final configuration produces a machine name, description, and compatible challenge.
+
+AC-008: AI Fallback
+
+A simulated AI failure still results in a valid challenge.
+
+AC-009: Overlay Recovery
+
+Reloading or reconnecting the overlay restores the current machine state.
+
+AC-010: Authorization
+
+Unauthorized viewers cannot invoke privileged controls.
+
+AC-011: Demo Mode
+
+The full build-and-reveal experience works without live Twitch traffic.
+
+AC-012: Clean Setup
+
+A new developer can configure the environment and run the application using repository instructions.
+
+============================================================
+
+IMPLEMENTATION PRIORITIES
+
+Phase 1: Foundation
+
+Set up the repository.
+Configure TypeScript.
+Create the backend and frontend.
+Implement local demo mode.
+
+Phase 2: Core Loop
+
+Implement machine state.
+Create component definitions.
+Build the assembly engine.
+Add automated tests.
+
+Phase 3: Twitch Integration
+
+Connect Twitch chat.
+Parse and validate commands.
+Add cooldowns and authorization.
+
+Phase 4: Live Visuals
+
+Implement the animated overlay.
+Add WebSocket synchronization.
+Configure OBS browser-source support.
+
+Phase 5: AI Experience
+
+Generate machine names.
+Generate descriptions.
+Generate streamer challenges.
+Add fallback logic.
+
+Phase 6: Finalization
+
+Test error handling.
+Run end-to-end tests.
+Write the README.
+Document environment variables.
+Prepare the demo recording.
+
+If time becomes constrained, preserve the core loop and working Twitch connection. Defer EventSub extras, persistent storage, and secondary features before sacrificing a reliable end-to-end demonstration.
+
+============================================================
+
+ASSUMPTIONS AND DEFAULTS
+
+The following defaults are recommended for implementation:
+
+One active machine per streamer session.
+A configurable 30–60 second build window.
+One component per accepted contribution.
+A configurable component cap, initially 30.
+A configurable viewer cooldown, initially three seconds.
+One shared machine state for all viewers.
+Predefined combinations and challenge templates.
+AI generation at session finalization.
+Manual challenge completion acknowledgment.
+Local demo mode alongside live Twitch integration.
+
+Deployment hosting, authentication setup, final component inventory, and visual design can be finalized during implementation without blocking the initial vertical slice.
+
+============================================================
+
+DEFINITION OF DONE
+
+ChatAlchemy is ready for hackathon submission when a streamer can:
+
+Connect the application to Twitch.
+Start a build session.
+Receive viewer contributions through chat.
+Watch a coherent animated machine evolve in OBS.
+Generate an AI-assisted machine identity and challenge.
+Reveal a challenge determined by the final machine configuration.
+Demonstrate the complete experience with a reliable fallback mode.
+
+The repository must include all source code, setup instructions, environment variable documentation, and tests needed to run the project.
+
+The final hackathon submission must include:
+
+Repository URL.
+Project description.
+Public or unlisted YouTube demo under three minutes.
+Relevant Codex session ID.
