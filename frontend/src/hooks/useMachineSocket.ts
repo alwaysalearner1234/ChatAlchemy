@@ -1,62 +1,53 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { MOCK_DURATION_SECONDS, mockChallenge, mockComponents } from '../data/mockData'
+import { MOCK_DURATION_SECONDS, mockChallenge } from '../data/mockData'
 import { MachineWebSocket } from '../services/websocketClient'
-import type { ClientCommand, ConnectionStatus, MachineEvent, MachineState, SessionStatus } from '../types'
+import type { ClientCommand, ConnectionStatus, MachineEvent, MachineState } from '../types'
 
-const initialState: MachineState = { sessionId: 'demo-machine-lab-04', status: 'ready', remainingSeconds: MOCK_DURATION_SECONDS, contributions: 0, buildersOnline: 24, components: [], challenge: mockChallenge }
+const initialState: MachineState = { sessionId: 'connecting', status: 'ready', remainingSeconds: MOCK_DURATION_SECONDS, contributions: 0, buildersOnline: 0, components: [], challenge: mockChallenge, mode: 'DEMO', revision: 0 }
+const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
 
 export function useMachineSocket() {
   const [state, setState] = useState<MachineState>(initialState)
-  const [connection, setConnection] = useState<ConnectionStatus>('demo')
+  const [connection, setConnection] = useState<ConnectionStatus>('connecting')
   const [error, setError] = useState<string | null>(null)
   const [activeCombination, setActiveCombination] = useState<{ componentIds: string[]; effect: string } | null>(null)
   const socket = useRef<MachineWebSocket | null>(null)
   const reconnectTimer = useRef<number | null>(null)
-  const isDemo = !import.meta.env.VITE_WS_URL
+  const revision = useRef(0)
 
   const applyEvent = useCallback((event: MachineEvent) => {
-    if (event.type === 'state.snapshot') setState(event.state)
-    if (event.type === 'component.added') setState((current) => ({ ...current, components: [...current.components, event.component], contributions: event.contributions }))
-    if (event.type === 'session.updated') setState((current) => ({ ...current, status: event.status, remainingSeconds: event.remainingSeconds }))
-    if (event.type === 'machine.generated') setState((current) => ({ ...current, machineName: event.machineName, description: event.description }))
-    if (event.type === 'challenge.revealed') setState((current) => ({ ...current, challenge: event.challenge }))
-    if (event.type === 'combination.activated') { setActiveCombination(event); window.setTimeout(() => setActiveCombination(null), 900) }
+    const eventRevision = 'revision' in event ? event.revision : undefined
+    if (typeof eventRevision === 'number' && event.type !== 'state.snapshot' && eventRevision <= revision.current) return
+    if (typeof eventRevision === 'number') revision.current = eventRevision
+    if (event.type === 'state.snapshot') { revision.current = event.revision ?? 0; setState(event.state); return }
+    if (event.type === 'component.added') setState((current) => ({ ...current, components: [...current.components.filter((item) => item.instanceId !== event.component.instanceId), event.component], contributions: event.contributions, revision: eventRevision ?? current.revision }))
+    if (event.type === 'session.updated') setState((current) => ({ ...current, ...(event.state as Partial<MachineState>), status: (event.state as MachineState)?.status ?? event.status ?? current.status, remainingSeconds: (event.state as MachineState)?.remainingSeconds ?? event.remainingSeconds ?? current.remainingSeconds, revision: eventRevision ?? current.revision }))
+    if (event.type === 'machine.generated') setState((current) => ({ ...current, machineName: event.machineName, description: event.description, personality: event.personality, revision: eventRevision ?? current.revision }))
+    if (event.type === 'challenge.revealed') setState((current) => ({ ...current, challenge: { name: event.challenge.title ?? event.challenge.name, description: event.challenge.instructions, instructions: event.challenge.instructions, difficulty: event.challenge.difficulty }, revision: eventRevision ?? current.revision }))
+    if (event.type === 'combination.activated') { setState((current) => ({ ...current, activeCombos: [...new Set([...(current.activeCombos ?? []), ...(event.name ? [event.name] : [])])], revision: eventRevision ?? current.revision })); setActiveCombination(event); window.setTimeout(() => setActiveCombination(null), 900) }
     if (event.type === 'component.rejected') setError(event.reason)
     if (event.type === 'error') setError(event.message)
   }, [])
 
-  const send = useCallback((command: ClientCommand) => {
-    if (!isDemo) { socket.current?.send(command); return }
-    if (command.type.startsWith('session.')) {
-      const status: SessionStatus = command.type === 'session.start' || command.type === 'session.resume' ? 'running' : command.type === 'session.pause' ? 'paused' : command.type === 'session.finish' ? 'finished' : 'ready'
-      setState((current) => ({ ...current, status, remainingSeconds: command.type === 'session.reset' ? MOCK_DURATION_SECONDS : current.remainingSeconds, components: command.type === 'session.reset' ? [] : current.components, contributions: command.type === 'session.reset' ? 0 : current.contributions }))
-    }
-    if (command.type === 'component.add') {
-      const component = mockComponents.find((item) => item.id === command.componentId)
-      if (!component || state.components.length >= 10 || state.status === 'finished') return
-      const nextComponents = [...state.components, { ...component, instanceId: `${component.id}-${Date.now()}`, addedAt: new Date().toISOString(), addedBy: 'demo-viewer' }]
-      applyEvent({ type: 'component.added', component: nextComponents[nextComponents.length - 1], contributions: state.contributions + 1 })
-      const ids = nextComponents.map((item) => item.id)
-      const combo = ids.includes('laser') && ids.includes('portal') ? { componentIds: ['laser', 'portal'], effect: 'beam' as const } : ids.filter((id) => id === 'gear').length >= 2 && ids.includes('battery') ? { componentIds: ['gear', 'battery'], effect: 'pulse' as const } : ids.includes('black-hole') && ids.includes('portal') ? { componentIds: ['black-hole', 'portal'], effect: 'orbit' as const } : null
-      if (combo) applyEvent({ type: 'combination.activated', ...combo })
-    }
-  }, [applyEvent, isDemo, state.components, state.contributions])
-
+  const send = useCallback((command: ClientCommand) => socket.current?.send(command), [])
   useEffect(() => {
-    if (isDemo) return
     let disposed = false
     const connect = () => {
       if (disposed) return
       setConnection((current) => current === 'connected' ? 'reconnecting' : 'connecting')
-      const client = new MachineWebSocket(import.meta.env.VITE_WS_URL, { onEvent: applyEvent, onOpen: () => { setConnection('connected'); setError(null); client.send({ type: 'state.request' }) }, onClose: () => { setConnection('reconnecting'); if (!disposed) reconnectTimer.current = window.setTimeout(connect, 2000) }, onError: () => { setConnection('error'); setError('Unable to connect to the machine session.') } })
+      const client = new MachineWebSocket(wsUrl, { onEvent: applyEvent, onOpen: () => { setConnection('connected'); setError(null); client.send({ type: 'state.request' }) }, onClose: () => { setConnection('reconnecting'); if (!disposed) reconnectTimer.current = window.setTimeout(connect, 2000) }, onError: () => { setConnection('error'); setError('Unable to connect to ChatAlchemy. Start the backend, then retry.') } })
       socket.current = client
-      client.connect()
+      try { client.connect() } catch { setConnection('error'); reconnectTimer.current = window.setTimeout(connect, 2000) }
     }
     connect()
     return () => { disposed = true; if (reconnectTimer.current) window.clearTimeout(reconnectTimer.current); socket.current?.close() }
-  }, [applyEvent, isDemo])
+  }, [applyEvent])
 
-  useEffect(() => { if (isDemo && state.status === 'running' && state.remainingSeconds > 0) { const timer = window.setInterval(() => setState((current) => ({ ...current, remainingSeconds: Math.max(0, current.remainingSeconds - 1), status: current.remainingSeconds <= 1 ? 'finished' : current.status })), 1000); return () => window.clearInterval(timer) } }, [isDemo, state.status, state.remainingSeconds])
+  useEffect(() => {
+    if (state.status !== 'running') return
+    const timer = window.setInterval(() => setState((current) => ({ ...current, remainingSeconds: Math.max(0, current.remainingSeconds - 1) })), 1000)
+    return () => window.clearInterval(timer)
+  }, [state.status, state.sessionId])
 
   return { state, connection, error, activeCombination, clearError: () => setError(null), send }
 }

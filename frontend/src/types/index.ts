@@ -19,6 +19,7 @@ export type PlacedComponent = MachineComponent & {
 
 export type Challenge = {
   name: string
+  title?: string
   description: string
   instructions: string
   difficulty?: string
@@ -33,18 +34,23 @@ export type MachineState = {
   components: PlacedComponent[]
   machineName?: string
   description?: string
+  personality?: string
   challenge?: Challenge
+  revision?: number
+  mode?: 'DEMO' | 'LIVE'
+  activeCombos?: string[]
 }
 
 export type MachineEvent =
-  | { type: 'state.snapshot'; state: MachineState }
-  | { type: 'component.added'; component: PlacedComponent; contributions: number }
+  | { type: 'state.snapshot'; state: MachineState; revision?: number }
+  | { type: 'component.added'; component: PlacedComponent; contributions: number; revision?: number }
   | { type: 'component.rejected'; reason: string }
-  | { type: 'session.updated'; status: SessionStatus; remainingSeconds: number }
-  | { type: 'machine.generated'; machineName: string; description: string }
-  | { type: 'challenge.revealed'; challenge: Challenge }
-  | { type: 'combination.activated'; componentIds: string[]; effect: 'pulse' | 'beam' | 'orbit' | 'shake' }
+  | { type: 'session.updated'; status?: SessionStatus; remainingSeconds?: number; state?: Partial<MachineState>; revision?: number }
+  | { type: 'machine.generated'; machineName: string; description: string; personality?: string; revision?: number }
+  | { type: 'challenge.revealed'; challenge: Challenge; revision?: number }
+  | { type: 'combination.activated'; componentIds: string[]; effect: 'pulse' | 'beam' | 'orbit' | 'shake'; name?: string; revision?: number }
   | { type: 'error'; message: string }
+  | { type: 'event.triggered'; name: string }
 
 export type ClientCommand =
   | { type: 'session.start' }
@@ -52,5 +58,6 @@ export type ClientCommand =
   | { type: 'session.resume' }
   | { type: 'session.finish' }
   | { type: 'session.reset' }
+  | { type: 'event.trigger' }
   | { type: 'component.add'; componentId: string }
   | { type: 'state.request' }

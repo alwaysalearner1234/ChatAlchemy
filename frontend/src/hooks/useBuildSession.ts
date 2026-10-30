@@ -12,12 +12,10 @@ export function useBuildSession() {
     return () => window.clearInterval(timer)
   }, [status, seconds])
 
-  useEffect(() => {
-    if (seconds === 0 && status === 'running') setStatus('finished')
-  }, [seconds, status])
+  const sessionStatus = status === 'running' && seconds === 0 ? 'finished' : status
 
   return {
-    status,
+    status: sessionStatus,
     seconds,
     start: () => setStatus('running'),
     pause: () => setStatus('paused'),

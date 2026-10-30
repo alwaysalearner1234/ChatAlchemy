@@ -1,10 +1,10 @@
-import type { MachineComponent } from '../types'
+﻿import type { MachineComponent } from '../types'
 
-type Props = { components: MachineComponent[]; placed: string[]; selected: string | null; onSelect: (id: string) => void; activeCombination?: { componentIds: string[]; effect: string } | null }
+type Props = { components: MachineComponent[]; placed: string[]; selected: string | null; onSelect: (id: string) => void; activeCombination?: { componentIds: string[]; effect: string } | null; activeCombos?: string[] }
 
-export function MachineCanvas({ components, placed, selected, onSelect, activeCombination }: Props) {
+export function MachineCanvas({ components, placed, selected, onSelect, activeCombination, activeCombos = [] }: Props) {
   return <div className={`machine-card ${activeCombination ? `combination-${activeCombination.effect}` : ''}`}>
-    <div className="machine-toolbar"><span><i className="status-dot" /> MACHINE CORE <b>·</b> ONLINE</span><span className="toolbar-hint">Community assembly in progress</span></div>
+    <div className="machine-toolbar"><span><i className="status-dot" /> MACHINE CORE <b>Â·</b> ONLINE</span><span className="toolbar-hint">Community assembly in progress</span></div>{activeCombos.length > 0 && <div className="toolbar-hint">Active combinations: {activeCombos.join(' · ')}</div>}
     <div className="machine-canvas">
       <img className="machine-hero" src="/machine-hero.svg" alt="The Chaos Engine machine" />
       <div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="orbit orbit-three" />
