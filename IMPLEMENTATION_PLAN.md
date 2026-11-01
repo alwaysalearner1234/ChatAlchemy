@@ -1,37 +1,32 @@
 # ChatAlchemy implementation plan
 
-## Audit
+## Current architecture
 
-- Frontend: React 19, TypeScript 7, Vite 8. `App.tsx` composes the existing overlay panels, SVG assets, and CSS design. `useMachineSocket.ts` owns a WebSocket client but currently simulates sessions, contributions, timer, and combinations in the browser.
-- Existing functional pieces: palette and machine canvas; chat-command input; session-control UI; WebSocket reconnect and snapshot request; AI narrator and challenge presentation.
-- Mocked: every machine mutation and session transition, timer expiration, combination detection, viewer count, activity feed, machine identity and challenge. No backend, tests, root scripts, or root env template exist.
-- Contracts: frontend `MachineState` and `MachineEvent` lack revision, active combinations, mode and generated personality. Session vocabulary is ready/running/finished, so backend wire mapping will preserve that UI vocabulary while retaining richer backend states.
-- WebSocket: `MachineWebSocket` sends state.request, component.add, session.start/pause/resume/finish/reset; client retries and requests snapshot after reconnect.
-- UI assets: all ten component visual definitions are in `frontend/src/data/mockData.ts`; black-hole visual id maps to the Twitch command `!blackhole`.
+- `frontend/` is the existing React 19 + TypeScript + Vite overlay. Its layout, CSS, palette, and SVG artwork are retained; its WebSocket client validates incoming events and the hook applies revisioned authoritative state.
+- `backend/` is a Node.js + TypeScript HTTP/WebSocket service. It owns the in-memory session, component catalog, contribution checks, combinations, timers, challenge generation, and optional Twitch/OpenAI adapters.
+- DEMO is the default explicit mode. LIVE requires channel, bot login/token, and configured streamer login; browser controls and the demo-command endpoint are disabled in LIVE.
+- Twitch moderator control requires both a configured moderator login and role metadata from Twitch. OpenAI output is schema-validated and bounded by a request timeout; challenge instructions come from approved templates and failures use deterministic output.
 
-## Target architecture and integration
+## SRS implementation plan and status
 
-- `backend/` TypeScript Node service owns machine/session state, component catalog, validated commands, deduplication, cooldowns, capacity, deterministic assembly, timer, WebSocket snapshots and broadcasts.
-- DEMO runs by default, can accept the existing browser control and palette actions, and exposes a server demo-command endpoint/command for multiple identities. LIVE is an explicit mode requiring Twitch credentials; it must fail visibly rather than silently falling back.
-- Twitch uses an authenticated chat adapter, with role metadata from the adapter and server-side configured streamer/moderators. OpenAI is optional, backend-only, schema-checked, timeout-bounded, and falls back deterministically.
-- Existing React panels and visual assets remain. Extend their data contracts, remove client-side authority, and render session/machine state and generated challenge received over WebSocket.
+| Area | Scope | Status |
+|---|---|---|
+| Session authority and lifecycle | Backend-owned state, start/pause/resume/finish/reset, timer, reconnect snapshot, monotonically increasing revisions | Implemented; DEMO lifecycle/integration covered |
+| Contributions and assembly | Catalog commands, cooldown, deduplication, capacity, deterministic placement and combinations | Implemented; unit and HTTP/WS integration covered |
+| Overlay and OBS | Preserve existing UI; display session, contributions, combinations, generated identity and challenge; show first nine of up to configured capacity | Implemented; production build verified, no OBS performance measurement |
+| DEMO controls | Browser commands and scripted HTTP viewer contribution | Implemented; integration covered |
+| Twitch LIVE | Chat connection, viewer commands, broadcaster/configured moderator authorization, control commands | Implemented; network verification pending |
+| OpenAI | Backend-only request, validated structured response, timeout, approved challenge instructions, deterministic fallback | Implemented; mock failure/validation covered; live API verification pending |
+| Security and robustness | Runtime payload validation, HTTP body/rate bounds, WebSocket payload/message bounds, no credential logging, graceful shutdown | Implemented; targeted review and checks pending |
+| Persistence and production telemetry | Durable sessions, durable analytics, deployment/OBS load test | Not implemented; state is in memory and restarts start a fresh session |
 
-## Requirements and priorities
+## Risks and limits
 
-1. Shared wire types and backend foundation/configuration.
-2. Catalog, deterministic assembly rules, authoritative session lifecycle and tests.
-3. WebSocket snapshot/event protocol and frontend integration.
-4. Demo command path and visible DEMO/LIVE mode.
-5. Optional Twitch and OpenAI adapters, authorization and docs.
-6. README, env examples, typecheck/lint/test/build and known-issues review.
+- Restarting the backend creates a fresh session; there is no database or durable history.
+- The canvas has nine visual slots. Up to `MAX_COMPONENTS` remain in authoritative state, and the overlay identifies when more than nine exist.
+- Twitch and OpenAI outcomes depend on external service availability and configured credentials. Their integration results are recorded separately from deterministic tests.
+- HTTP rate limiting is process-local and keyed by remote address; production reverse-proxy deployment must preserve an appropriate client address and apply its own edge limits.
 
-## Risks
+## Verification
 
-- No existing server/deployment configuration or persistence; state is in-memory and restarts create a clean session.
-- The current canvas has nine slots while the SRS permits thirty parts; retain layout and show the first nine visually while keeping all state/contributions.
-- Live Twitch requires application credentials and a bot token with chat access; a usable DEMO requires none.
-- OpenAI SDK structured-output APIs depend on SDK version; keep an independently validated fallback.
-
-## Verification strategy
-
-Backend unit tests for each rule, duplicate activation, deterministic positions, invalid commands, cooldown/capacity, session transitions/timer and fallback challenge. Run backend/frontend typecheck, lint, tests, and production build where scripts and installed dependencies permit; record actual outcomes in `PROGRESS.md`.
+Run backend typecheck, test, and build, and frontend typecheck, lint, and build from their respective directories. `PROGRESS.md` records the latest results and the SRS compliance evidence matrix.

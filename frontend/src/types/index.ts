@@ -39,6 +39,7 @@ export type MachineState = {
   revision?: number
   mode?: 'DEMO' | 'LIVE'
   activeCombos?: string[]
+  maxComponents?: number
 }
 
 export type MachineEvent =

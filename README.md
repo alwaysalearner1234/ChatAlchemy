@@ -50,6 +50,7 @@ Copy `backend/.env.example` to `backend/.env`. The frontend uses `ws://localhost
 | `BUILD_DURATION_SECONDS` | Contribution window, default `45`. |
 | `MAX_COMPONENTS` | Machine capacity, default `30`. |
 | `VIEWER_COOLDOWN_SECONDS` | Per-viewer contribution cooldown, default `3`. |
+| `SPECIAL_EVENT_COOLDOWN_SECONDS` | Minimum seconds between special events, default `30`. |
 | `TWITCH_CHANNEL` | Channel to join in LIVE mode. |
 | `TWITCH_USERNAME` | Twitch bot login. |
 | `TWITCH_ACCESS_TOKEN` | Bot OAuth token with chat access; backend only. |
@@ -57,10 +58,14 @@ Copy `backend/.env.example` to `backend/.env`. The frontend uses `ws://localhost
 | `TWITCH_MODERATOR_LOGINS` | Comma-separated moderator logins. Role metadata from Twitch is also required. |
 | `OPENAI_API_KEY` | Optional backend-only key for AI generation. |
 | `OPENAI_MODEL` | Model name, default `gpt-4o-mini`. |
+| `OPENAI_TIMEOUT_MS` | OpenAI request timeout in milliseconds, default `10000`; retries are disabled. |
+| `FRONTEND_ORIGIN` | Allowed browser origin for HTTP requests, default `http://localhost:5173`. |
+
+The HTTP server limits each client address to 120 requests per minute and rejects demo command bodies over 4 KiB. WebSocket frames are limited to 8 KiB and each connection to 50 commands per 10 seconds. These process-local limits complement deployment-level protections.
 
 ### Twitch setup (LIVE)
 
-Create a Twitch developer application and a bot account/token that can join the target channel and read chat. Put the bot login/token, channel login, and streamer login in `backend/.env`, then set `APP_MODE=LIVE`. Restart the backend. Missing required Twitch credentials fail startup instead of falling back to DEMO. Supported viewer commands are `!gear`, `!laser`, `!portal`, `!battery`, `!duck`, `!blackhole`, `!spring`, `!fan`, `!magnet`, `!prism`, and `!machine`. Broadcaster/moderator controls are `!start`, `!pause`, `!resume`, `!finish`, `!reset`, and `!event`.
+Create a Twitch developer application and a bot account/token that can join the target channel and read chat. Put the bot login/token, channel login, and streamer login in `backend/.env`, then set `APP_MODE=LIVE`. Restart the backend. All four values (`TWITCH_CHANNEL`, `TWITCH_USERNAME`, `TWITCH_ACCESS_TOKEN`, and `TWITCH_STREAMER_LOGIN`) are required; missing values fail startup instead of falling back to DEMO. Supported viewer commands are `!gear`, `!laser`, `!portal`, `!battery`, `!duck`, `!blackhole`, `!spring`, `!fan`, `!magnet`, `!prism`, and `!machine`. Broadcaster/moderator controls are `!start`, `!pause`, `!resume`, `!finish`, `!reset`, and `!event`. Moderator control requires a configured login in `TWITCH_MODERATOR_LOGINS` and Twitch moderator role metadata.
 
 ### OpenAI setup
 
@@ -90,6 +95,6 @@ npm.cmd run build
 
 - **Overlay says it cannot connect:** ensure the backend is listening on port 8080, and check `VITE_WS_URL`.
 - **Contributions are rejected:** start or resume a session; check cooldown and component capacity.
-- **LIVE startup fails:** verify all three required Twitch environment values and use an OAuth token the bot can use to connect.
+- **LIVE startup fails:** verify all four required Twitch environment values and use an OAuth token the bot can use to connect.
 - **AI result is generic:** the app uses a deterministic fallback when no key is configured or the request/output fails.
 - **Restart lost the build:** backend state is in memory and is not persisted.
